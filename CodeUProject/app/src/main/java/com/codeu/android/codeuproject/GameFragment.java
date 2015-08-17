@@ -1,6 +1,5 @@
 package com.codeu.android.codeuproject;
 
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -9,10 +8,14 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.codeu.android.codeuproject.data.GameDataContract.GameEntry;
 
@@ -54,6 +57,32 @@ public class GameFragment extends Fragment implements LoaderManager.LoaderCallba
 
     public GameFragment() {}
 
+    public interface Callback {
+
+        public void onItemSelected(Uri info);
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.gamefragment, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_refresh) {
+            updateGameData();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
@@ -72,9 +101,13 @@ public class GameFragment extends Fragment implements LoaderManager.LoaderCallba
                 Cursor cursor = (Cursor) parent.getItemAtPosition(position);
 
                 if (cursor != null) {
-                    Intent intent = new Intent(getActivity(), DetailActivity.class)
-                            .setData(GameEntry.buildGameWithID(cursor.getString(COL_IND_GAME_ID)));
-                    startActivity(intent);
+
+                    ((Callback) getActivity()).
+                            onItemSelected(GameEntry.buildGameWithID(cursor.getString(COL_IND_GAME_ID)));
+
+                    //Intent intent = new Intent(getActivity(), DetailActivity.class)
+                      //      .setData(GameEntry.buildGameWithID(cursor.getString(COL_IND_GAME_ID)));
+                    //startActivity(intent);
                 }
             }
         });
@@ -89,6 +122,12 @@ public class GameFragment extends Fragment implements LoaderManager.LoaderCallba
     }
 
     private void updateGameData() {
+
+        CharSequence text = "Fetching game releases from the last 2 weeks.";
+        int duration = Toast.LENGTH_LONG;
+        Toast toast = Toast.makeText(getActivity(), text, duration);
+        toast.show();
+
         FetchGameDataTask gameDataTask = new FetchGameDataTask(getActivity());
         gameDataTask.execute();
     }
